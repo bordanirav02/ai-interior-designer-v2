@@ -1,0 +1,20 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+.env
+
+# Flask uploads/outputs
+backend/uploads/
+backend/outputs/
+
+# Node
+node_modules/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Colab
+*.ipynb_checkpoints/
