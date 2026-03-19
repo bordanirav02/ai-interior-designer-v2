@@ -2,26 +2,36 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./ObjectEditor.css";
 
-export default function ObjectEditor({ objects, onEdit }) {
+export default function ObjectEditor({ objects, onEdit, editedImage }) {
   const [selectedObject, setSelectedObject] = useState(null);
   const [prompt, setPrompt] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = () => {
-    if (!selectedObject || !prompt.trim()) return;
-    setSubmitted(true);
-    onEdit(selectedObject, prompt);
-  };
+  const [loading, setLoading] = useState(false);
+  const [editHistory, setEditHistory] = useState([]);
 
   const suggestions = {
-    chair: ["modern white accent chair", "vintage leather armchair", "minimalist wooden chair"],
-    sofa: ["luxury velvet sofa in deep blue", "white modern sectional", "mid-century teak sofa"],
-    bed: ["platform bed with gold frame", "rustic wooden bed frame", "modern upholstered bed"],
-    table: ["marble dining table", "glass coffee table", "rustic wood farmhouse table"],
-    "potted plant": ["tall fiddle leaf fig", "hanging macrame plant", "bamboo in ceramic pot"],
+    chair: ["modern white accent chair with gold legs", "vintage leather armchair in cognac", "minimalist wooden chair in natural oak"],
+    sofa: ["luxury velvet sofa in deep emerald green", "white modern sectional with chrome legs", "mid-century teak sofa with mustard cushions"],
+    bed: ["platform bed with gold brass frame and white linen", "rustic reclaimed wood bed frame", "modern upholstered bed in charcoal grey velvet"],
+    table: ["Calacatta marble dining table with gold base", "smoked glass coffee table with chrome frame", "rustic solid oak farmhouse dining table"],
+    "potted plant": ["tall fiddle leaf fig tree in white pot", "hanging golden pothos in woven basket", "large monstera deliciosa in terracotta pot"],
+    lamp: ["modern arc floor lamp in brushed gold", "industrial cage pendant lamp in matte black", "sculptural ceramic table lamp in cream"],
+    couch: ["luxury boucle sectional in cream white", "deep blue velvet chesterfield sofa", "minimalist low profile sofa in light grey"],
   };
 
   const getSuggestions = () => suggestions[selectedObject] || [];
+
+  const handleSubmit = async () => {
+    if (!selectedObject || !prompt.trim()) return;
+    setLoading(true);
+    try {
+      await onEdit(selectedObject, prompt);
+      setEditHistory(prev => [...prev, { object: selectedObject, prompt }]);
+      setPrompt("");
+      setSelectedObject(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <motion.div
@@ -35,20 +45,39 @@ export default function ObjectEditor({ objects, onEdit }) {
           <span className="editor-icon">✦</span>
           <div>
             <h2>Edit Individual Objects</h2>
-            <p>Select an object and describe what you want to replace it with</p>
+            <p>Select an object and describe what you want — you can edit multiple times</p>
           </div>
         </div>
       </div>
 
+      {/* Edit History */}
+      {editHistory.length > 0 && (
+        <div className="edit-history">
+          <p className="objects-label">Edit History:</p>
+          <div className="history-list">
+            {editHistory.map((item, i) => (
+              <div key={i} className="history-item">
+                <span className="history-num">{i + 1}</span>
+                <span className="history-text">
+                  Changed <strong>{item.object}</strong> — {item.prompt}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Detected Objects */}
       <div className="objects-section">
-        <p className="objects-label">Detected in your room:</p>
+        <p className="objects-label">
+          {editHistory.length > 0 ? "Edit another object:" : "Detected in your room:"}
+        </p>
         <div className="objects-list">
           {objects.map((obj) => (
             <motion.button
               key={obj}
               className={`object-chip ${selectedObject === obj ? "selected" : ""}`}
-              onClick={() => { setSelectedObject(obj); setPrompt(""); setSubmitted(false); }}
+              onClick={() => { setSelectedObject(obj); setPrompt(""); }}
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
             >
@@ -71,7 +100,6 @@ export default function ObjectEditor({ objects, onEdit }) {
               Describe the new <strong>{selectedObject}</strong> you want:
             </p>
 
-            {/* Suggestions */}
             {getSuggestions().length > 0 && (
               <div className="suggestions">
                 {getSuggestions().map((s) => (
@@ -90,22 +118,23 @@ export default function ObjectEditor({ objects, onEdit }) {
               <input
                 type="text"
                 className="edit-input"
-                placeholder={`e.g. modern gold ${selectedObject} with velvet finish...`}
+                placeholder={`e.g. luxury velvet ${selectedObject} in deep blue...`}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               />
               <button
                 className="edit-submit-btn"
-                disabled={!prompt.trim() || submitted}
+                disabled={!prompt.trim() || loading}
                 onClick={handleSubmit}
               >
-                {submitted ? "Generating..." : "Apply →"}
+                {loading ? "Generating..." : "Apply →"}
               </button>
             </div>
 
             <p className="edit-note">
-              ◈ Everything else in the room will remain identical — only the {selectedObject} changes
+              ◈ Only the {selectedObject} will change — everything else stays identical.
+              After this edit you can continue editing other objects.
             </p>
           </motion.div>
         )}

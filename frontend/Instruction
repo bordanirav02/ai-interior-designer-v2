@@ -1,0 +1,70 @@
+## Complete Startup Guide
+
+---
+
+**Step 1 — Open Terminal 1 and start Flask:**
+```powershell
+cd "D:\Full stack Development\ai-interior-designer-v2\backend"
+venv\Scripts\activate
+python app.py
+```
+Wait for `Running on http://127.0.0.1:5000` — keep this terminal open.
+
+---
+
+**Step 2 — Open Terminal 2 and start React:**
+```powershell
+cd "D:\Full stack Development\ai-interior-designer-v2\frontend"
+npm start
+```
+Wait for browser to open at `http://localhost:3000` — keep this terminal open.
+
+---
+
+**Step 3 — Open Google Colab and run cells in order:**
+
+1. Imports
+2. Cache directory
+3. Load ControlNet
+4. Load Stable Diffusion
+5. Load Inpainting pipeline
+6. Load YOLOv8
+7. Load SAM
+8. Helper functions
+9. Style prompts
+10. generate_style function
+11. detect_objects function
+12. edit_object function
+13. Flask API + ngrok cell
+14. ngrok auth token cell
+
+Wait for the URL to print.
+
+---
+
+**Step 4 — Open Terminal 3 and register the Colab URL:**
+```powershell
+Invoke-WebRequest -Uri "http://localhost:5000/set-colab-url" -Method POST -ContentType "application/json" -Body '{"url": "https://elza-gradualistic-cyril.ngrok-free.dev"}'
+```
+
+---
+
+**Step 5 — Verify everything is connected:**
+```powershell
+Invoke-WebRequest -Uri "http://localhost:5000/health" -Method GET
+```
+You should see `colab_connected: true`
+
+---
+
+**Step 6 — Open the app:**
+
+Go to `http://localhost:3000` and you are ready.
+
+---
+
+**Important reminders:**
+- Keep Terminal 1 (Flask) and Terminal 2 (React) open at all times
+- The ngrok URL changes every session — always re-register it in Step 4
+- If generation fails, check that Colab Flask cell is still running — re-run it if needed
+- Models load from Google Drive so steps 3-7 in Colab are fast after first setup

@@ -122,20 +122,31 @@ def detect_objects():
         "message": "Detection complete",
         "objects": result.get("objects", [])
     })
-
 @app.route('/edit-object', methods=['POST'])
 def edit_object():
     if not COLAB_URL["url"]:
         return jsonify({"error": "Colab not connected"}), 503
+
     data = request.json
     object_label = data.get("object")
     edit_prompt = data.get("prompt")
+
     if not object_label or not edit_prompt:
         return jsonify({"error": "object and prompt required"}), 400
+
+    # Use edited image if exists, otherwise use styled image
+    edited_path = os.path.join(OUTPUT_FOLDER, 'room_edited.jpg')
     styled_path = os.path.join(OUTPUT_FOLDER, 'room_styled.jpg')
-    if not os.path.exists(styled_path):
-        return jsonify({"error": "No styled image found"}), 400
-    image_b64 = image_to_base64(styled_path)
+
+    if os.path.exists(edited_path):
+        image_b64 = image_to_base64(edited_path)
+        print("Using previous edit as base")
+    elif os.path.exists(styled_path):
+        image_b64 = image_to_base64(styled_path)
+        print("Using styled image as base")
+    else:
+        return jsonify({"error": "No image found. Generate a style first."}), 400
+
     try:
         response = requests.post(
             f"{COLAB_URL['url']}/colab-edit",
@@ -150,16 +161,19 @@ def edit_object():
         result = response.json()
     except Exception as e:
         return jsonify({"error": f"Colab request failed: {str(e)}"}), 500
+
     if "image" not in result:
         return jsonify({"error": "Colab did not return an image", "details": result}), 500
+
+    # Save as room_edited.jpg for next edit
     output_path = os.path.join(OUTPUT_FOLDER, 'room_edited.jpg')
     base64_to_image(result["image"], output_path)
+
     return jsonify({
         "message": "Object edit complete",
         "object": object_label,
         "image": result["image"]
     })
-
 if __name__ == '__main__':
     print("🚀 AI Interior Designer v2 - Flask API")
     print("📍 Running at: http://localhost:5000")
