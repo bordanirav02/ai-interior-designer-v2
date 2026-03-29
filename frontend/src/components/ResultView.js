@@ -12,7 +12,8 @@ export default function ResultView({ original, generated, style, onReset, onNewS
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const imgRef = useRef(null);
-
+  const [showShare, setShowShare] = useState(false);
+  const [copied, setCopied] = useState(false);
   const zoomCanvasRef = useRef(null);
 
   useEffect(() => {
@@ -107,6 +108,31 @@ export default function ResultView({ original, generated, style, onReset, onNewS
     img.src = generated;
   };
 
+  const handleCopyImage = async () => {
+    try {
+      const res = await fetch(generated);
+      const blob = await res.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": blob })
+      ]);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback — copy text description
+      const text = `Check out my AI-transformed room using InteriorAI!\nStyle: ${style.replace(/_/g, " ")}\nPowered by Stable Diffusion + ControlNet`;
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleShareText = async () => {
+    const text = `I just transformed my room with AI! Style: ${style.replace(/_/g, " ").toUpperCase()} — Generated using InteriorAI powered by Stable Diffusion + ControlNet`;
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="result-container">
 
@@ -171,6 +197,12 @@ export default function ResultView({ original, generated, style, onReset, onNewS
         <button className="result-btn secondary" onClick={onReset}>
           + New Photo
         </button>
+        <button
+          className="result-btn secondary"
+          onClick={() => setShowShare(!showShare)}
+        >
+          ↗ Share
+        </button>
       </motion.div>
 
       <p className="result-scroll-hint">
@@ -209,6 +241,44 @@ export default function ResultView({ original, generated, style, onReset, onNewS
           + New Photo
         </button>
       </motion.div>
+
+      <AnimatePresence>
+  {showShare && (
+    <motion.div
+      className="share-panel"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+    >
+      <p className="share-title">Share your design</p>
+      <div className="share-options">
+        <button className="share-option-btn" onClick={handleCopyImage}>
+          <span className="share-option-icon">⎘</span>
+          <div>
+            <span className="share-option-name">
+              {copied ? "Copied!" : "Copy Image"}
+            </span>
+            <span className="share-option-desc">Copy to clipboard</span>
+          </div>
+        </button>
+        <button className="share-option-btn" onClick={handleShareText}>
+          <span className="share-option-icon">✍</span>
+          <div>
+            <span className="share-option-name">Copy Caption</span>
+            <span className="share-option-desc">Ready to paste anywhere</span>
+          </div>
+        </button>
+        <button className="share-option-btn" onClick={handleDownload}>
+          <span className="share-option-icon">↓</span>
+          <div>
+            <span className="share-option-name">Save Image</span>
+            <span className="share-option-desc">Download to device</span>
+          </div>
+        </button>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* Zoom Modal */}
       <AnimatePresence>
