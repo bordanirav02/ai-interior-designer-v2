@@ -388,3 +388,134 @@
   background: rgba(224, 92, 92, 0.1);
   border-color: var(--error);
 }
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.96);
+  backdrop-filter: blur(12px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 420px;
+  padding: 0 24px;
+}
+
+.loading-logo {
+  font-size: 36px;
+  color: var(--gold);
+  animation: pulse 2s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.95); }
+}
+
+.loading-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 300;
+  color: var(--text);
+  text-align: center;
+}
+
+/* Progress Bar */
+.loading-bar-wrap {
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.loading-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), #f0d080);
+  border-radius: 2px;
+  box-shadow: 0 0 12px rgba(201, 168, 76, 0.5);
+}
+
+.loading-percent {
+  font-size: 12px;
+  color: var(--gold);
+  font-family: monospace;
+  letter-spacing: 0.1em;
+  align-self: flex-end;
+}
+
+/* Steps */
+.loading-steps {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.loading-step-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.3;
+  transition: all 0.3s;
+}
+
+.loading-step-item.active {
+  opacity: 1;
+}
+
+.loading-step-item.done {
+  opacity: 0.6;
+}
+
+.loading-step-dot {
+  font-size: 12px;
+  color: var(--text-muted);
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.loading-step-item.active .loading-step-dot {
+  color: var(--gold);
+  animation: pulse 1s ease infinite;
+}
+
+.loading-step-item.done .loading-step-dot {
+  color: #5a9b5a;
+}
+
+.loading-step-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.loading-step-item.active .loading-step-label {
+  color: var(--text);
+}
+
+.loading-step-item.done .loading-step-label {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-color: rgba(255,255,255,0.2);
+}
+
+.loading-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  margin-top: 8px;
+  opacity: 0.5;
+}

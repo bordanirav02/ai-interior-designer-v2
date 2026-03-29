@@ -24,6 +24,8 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -44,7 +46,8 @@ export default function App() {
   const handleGenerate = async (style, previewImage = null, palette = null) => {
     setSelectedStyle(style);
     setLoading(true);
-    setLoadingMsg("Analyzing room structure...");
+    setLoadingStep(0);
+    setLoadingProgress(0);
 
     if (previewImage) {
       setGeneratedImage(previewImage);
@@ -52,15 +55,31 @@ export default function App() {
     }
 
     try {
-      setLoadingMsg("Generating " + style + " full quality...");
+      setLoadingStep(1);
+      setLoadingProgress(10);
+      await new Promise(r => setTimeout(r, 500));
+
+      setLoadingStep(2);
+      setLoadingProgress(20);
+      await new Promise(r => setTimeout(r, 500));
+
+      setLoadingStep(3);
+      setLoadingProgress(30);
+
       const res = await fetch("http://localhost:5000/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ style, palette }),
       });
+
+      setLoadingStep(4);
+      setLoadingProgress(60);
+
       const data = await res.json();
 
       if (data.image) {
+        setLoadingStep(5);
+        setLoadingProgress(80);
         setGeneratedImage("data:image/jpeg;base64," + data.image);
 
         setHistory(prev => [{
@@ -71,7 +90,8 @@ export default function App() {
           time: new Date().toLocaleTimeString()
         }, ...prev]);
 
-        setLoadingMsg("Detecting objects...");
+        setLoadingStep(6);
+        setLoadingProgress(90);
         if (!previewImage) setStep("result");
 
         const detectRes = await fetch("http://localhost:5000/detect-objects", {
@@ -81,26 +101,47 @@ export default function App() {
         });
         const detectData = await detectRes.json();
         setDetectedObjects(detectData.objects || []);
+
+        setLoadingStep(7);
+        setLoadingProgress(100);
+        await new Promise(r => setTimeout(r, 500));
         setStep("result");
       }
     } catch (err) {
       alert("Generation failed: " + err.message);
     } finally {
       setLoading(false);
+      setLoadingStep(0);
+      setLoadingProgress(0);
     }
   };
 
   const handleEdit = async (object, prompt) => {
     setLoading(true);
-    setLoadingMsg(`Editing ${object}...`);
+    setLoadingStep(0);
+    setLoadingProgress(0);
     try {
+      setLoadingStep(1);
+      setLoadingProgress(15);
+      await new Promise(r => setTimeout(r, 400));
+
+      setLoadingStep(2);
+      setLoadingProgress(35);
+
       const res = await fetch("http://localhost:5000/edit-object", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ object, prompt }),
       });
+
+      setLoadingStep(3);
+      setLoadingProgress(70);
       const data = await res.json();
+
       if (data.image) {
+        setLoadingStep(4);
+        setLoadingProgress(100);
+        await new Promise(r => setTimeout(r, 400));
         setEditedImage("data:image/jpeg;base64," + data.image);
         setGeneratedImage("data:image/jpeg;base64," + data.image);
         setStep("edit");
@@ -109,6 +150,8 @@ export default function App() {
       alert("Edit failed: " + err.message);
     } finally {
       setLoading(false);
+      setLoadingStep(0);
+      setLoadingProgress(0);
     }
   };
 
@@ -233,22 +276,68 @@ export default function App() {
       </AnimatePresence>
 
       {/* Loading Overlay */}
-      <AnimatePresence>
-        {loading && (
+<AnimatePresence>
+  {loading && (
+    <motion.div
+      className="loading-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <div className="loading-content">
+        <div className="loading-logo">◈</div>
+        <h2 className="loading-title">
+          {loadingStep <= 3 ? "Generating Your Design" :
+           loadingStep <= 5 ? "Finalizing Image" :
+           "Almost Ready"}
+        </h2>
+
+        {/* Progress Bar */}
+        <div className="loading-bar-wrap">
           <motion.div
-            className="loading-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <div className="loading-content">
-              <div className="loading-spinner" />
-              <p className="loading-msg">{loadingMsg}</p>
-              <p className="loading-sub">Powered by Stable Diffusion + ControlNet</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            className="loading-bar-fill"
+            initial={{ width: 0 }}
+            animate={{ width: `${loadingProgress}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          />
+        </div>
+        <span className="loading-percent">{loadingProgress}%</span>
+
+        {/* Step Indicators */}
+        <div className="loading-steps">
+          {[
+            "Preparing image",
+            "Analyzing structure",
+            "Edge detection",
+            "Running Stable Diffusion",
+            "Applying ControlNet",
+            "Finalizing",
+            "Detecting objects"
+          ].map((label, i) => (
+            <motion.div
+              key={i}
+              className={`loading-step-item ${
+                loadingStep > i + 1 ? "done" :
+                loadingStep === i + 1 ? "active" : ""
+              }`}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.05 }}
+            >
+              <span className="loading-step-dot">
+                {loadingStep > i + 1 ? "✓" :
+                 loadingStep === i + 1 ? "●" : "○"}
+              </span>
+              <span className="loading-step-label">{label}</span>
+            </motion.div>
+          ))}
+        </div>
+
+        <p className="loading-sub">Powered by Stable Diffusion + ControlNet</p>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* Main Content */}
       <main className="main">

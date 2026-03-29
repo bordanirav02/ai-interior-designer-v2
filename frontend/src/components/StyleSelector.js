@@ -21,19 +21,55 @@ export default function StyleSelector({ uploadedImage, onGenerate }) {
   const [previewDone, setPreviewDone] = useState(false);
   const [modalStyle, setModalStyle] = useState(null);
   const [selectedPalette, setSelectedPalette] = useState(null);
+  const [previewStep, setPreviewStep] = useState(0);
+const [previewProgress, setPreviewProgress] = useState(0);
 
 const handlePreviewAll = async () => {
     setLoadingPreviews(true);
     setPreviews({});
     setPreviewDone(false);
+    setPreviewStep(1);
+    setPreviewProgress(5);
+
     try {
+      setPreviewStep(2);
+      setPreviewProgress(15);
+      await new Promise(r => setTimeout(r, 400));
+
+      setPreviewStep(3);
+      setPreviewProgress(25);
+
       const res = await fetch("http://localhost:5000/preview-styles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ palette: selectedPalette }),
       });
+
+      // Simulate step progress while waiting for Colab
+      const steps = [
+        { step: 4, progress: 35, delay: 8000 },
+        { step: 5, progress: 50, delay: 8000 },
+        { step: 6, progress: 65, delay: 8000 },
+        { step: 7, progress: 78, delay: 8000 },
+        { step: 8, progress: 88, delay: 8000 },
+      ];
+
+      let stepIndex = 0;
+      const interval = setInterval(() => {
+        if (stepIndex < steps.length) {
+          setPreviewStep(steps[stepIndex].step);
+          setPreviewProgress(steps[stepIndex].progress);
+          stepIndex++;
+        }
+      }, 8000);
+
       const data = await res.json();
+      clearInterval(interval);
+
       if (data.previews) {
+        setPreviewStep(9);
+        setPreviewProgress(100);
+        await new Promise(r => setTimeout(r, 500));
         setPreviews(data.previews);
         setPreviewDone(true);
       }
@@ -41,6 +77,8 @@ const handlePreviewAll = async () => {
       alert("Preview failed: " + err.message);
     } finally {
       setLoadingPreviews(false);
+      setPreviewStep(0);
+      setPreviewProgress(0);
     }
   };
 
@@ -69,30 +107,75 @@ const handlePreviewAll = async () => {
 
       {/* Preview All Button */}
       {!previewDone && (
-        <motion.div
-          className="preview-all-section"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+  <motion.div
+    className="preview-all-section"
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+  >
+    {loadingPreviews ? (
+      <div className="preview-loading-box">
+        <div className="preview-loading-logo">◈</div>
+        <h3 className="preview-loading-title">Generating All 8 Styles</h3>
+
+        {/* Progress Bar */}
+        <div className="preview-bar-wrap">
+          <motion.div
+            className="preview-bar-fill"
+            initial={{ width: 0 }}
+            animate={{ width: `${previewProgress}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          />
+        </div>
+        <span className="preview-percent">{previewProgress}%</span>
+
+        {/* Steps */}
+        <div className="preview-steps">
+          {[
+            "Preparing image",
+            "Connecting to AI",
+            "Running edge detection",
+            "Generating Minimalist",
+            "Generating Industrial + Cyberpunk",
+            "Generating Modern Luxury + Scandinavian",
+            "Generating Mid-Century + Japanese Zen",
+            "Generating Bohemian",
+            "Finalizing all previews"
+          ].map((label, i) => (
+            <div
+              key={i}
+              className={`preview-step-item ${
+                previewStep > i + 1 ? "done" :
+                previewStep === i + 1 ? "active" : ""
+              }`}
+            >
+              <span className="preview-step-dot">
+                {previewStep > i + 1 ? "✓" :
+                 previewStep === i + 1 ? "●" : "○"}
+              </span>
+              <span className="preview-step-label">{label}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className="preview-loading-sub">
+          Generating 8 styles simultaneously — takes about 3 minutes
+        </p>
+      </div>
+    ) : (
+      <>
+        <button
+          className="preview-all-btn"
+          onClick={handlePreviewAll}
         >
-          <button
-            className="preview-all-btn"
-            onClick={handlePreviewAll}
-            disabled={loadingPreviews}
-          >
-            {loadingPreviews ? (
-              <>
-                <div className="preview-spinner" />
-                Generating all 8 styles... (~3 minutes)
-              </>
-            ) : (
-              <>◈ Preview All 8 Styles</>
-            )}
-          </button>
-          <p className="preview-hint">
-            See your room in all styles before choosing — or scroll down to pick directly
-          </p>
-        </motion.div>
-      )}
+          ◈ Preview All 8 Styles
+        </button>
+        <p className="preview-hint">
+          See your room in all styles before choosing — or scroll down to pick directly
+        </p>
+      </>
+    )}
+  </motion.div>
+)}
 
       {/* Preview Thumbnails Grid */}
       <AnimatePresence>
