@@ -122,6 +122,35 @@ def detect_objects():
         "message": "Detection complete",
         "objects": result.get("objects", [])
     })
+
+
+@app.route('/preview-styles', methods=['POST'])
+def preview_styles():
+    if not COLAB_URL["url"]:
+        return jsonify({"error": "Colab not connected"}), 503
+
+    upload_path = os.path.join(UPLOAD_FOLDER, 'room_original.jpg')
+    if not os.path.exists(upload_path):
+        return jsonify({"error": "No uploaded image found"}), 400
+
+    image_b64 = image_to_base64(upload_path)
+
+    try:
+        response = requests.post(
+            f"{COLAB_URL['url']}/colab-preview",
+            json={"image": image_b64},
+            headers=COLAB_HEADERS,
+            timeout=300
+        )
+        result = response.json()
+    except Exception as e:
+        return jsonify({"error": f"Colab request failed: {str(e)}"}), 500
+
+    return jsonify({
+        "message": "Previews generated",
+        "previews": result.get("previews", {})
+    })
+
 @app.route('/edit-object', methods=['POST'])
 def edit_object():
     if not COLAB_URL["url"]:

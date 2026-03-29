@@ -1,5 +1,6 @@
 import { ReactCompareSlider, ReactCompareSliderImage } from "react-compare-slider";
 import { motion } from "framer-motion";
+
 import "./ResultView.css";
 
 export default function ResultView({ original, generated, style, onReset, onNewStyle }) {
@@ -43,6 +44,7 @@ export default function ResultView({ original, generated, style, onReset, onNewS
         </button>
       </div>
 
+  \
       <p className="result-hint">
         ◈ Scroll down to edit individual objects in this room
       </p>
