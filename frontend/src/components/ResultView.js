@@ -4,7 +4,8 @@ import { ReactCompareSlider, ReactCompareSliderImage } from "react-compare-slide
 import "./ResultView.css";
 import StyleComparison from "./StyleComparison";
 
-export default function ResultView({ original, generated, style, onReset, onNewStyle }) {
+
+export default function ResultView({ original, generated, style, onReset, onNewStyle, onUndo, canUndo }) {
   const [zoomOpen, setZoomOpen] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
   const [zoomPos, setZoomPos] = useState({ x: 0, y: 0 });
@@ -12,29 +13,29 @@ export default function ResultView({ original, generated, style, onReset, onNewS
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const imgRef = useRef(null);
 
-const zoomCanvasRef = useRef(null);
+  const zoomCanvasRef = useRef(null);
 
-useEffect(() => {
-  const handleKey = (e) => {
-    if (e.key === "Escape") handleZoomClose();
-  };
-  window.addEventListener("keydown", handleKey);
-  return () => window.removeEventListener("keydown", handleKey);
-}, []);
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "Escape") handleZoomClose();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
-useEffect(() => {
-  const canvas = zoomCanvasRef.current;
-  if (!canvas || !zoomOpen) return;
+  useEffect(() => {
+    const canvas = zoomCanvasRef.current;
+    if (!canvas || !zoomOpen) return;
 
-  const handleWheel = (e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoomScale(prev => Math.min(Math.max(prev * delta, 1), 5));
-  };
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      setZoomScale(prev => Math.min(Math.max(prev * delta, 1), 5));
+    };
 
-  canvas.addEventListener("wheel", handleWheel, { passive: false });
-  return () => canvas.removeEventListener("wheel", handleWheel);
-}, [zoomOpen]);
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", handleWheel);
+  }, [zoomOpen]);
 
   const handleWheel = (e) => {
     e.preventDefault();
@@ -64,7 +65,7 @@ useEffect(() => {
     setZoomPos({ x: 0, y: 0 });
   };
 
- const handleDownload = () => {
+  const handleDownload = () => {
     const canvas = document.createElement("canvas");
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -110,49 +111,49 @@ useEffect(() => {
     <div className="result-container">
 
       {/* Compare Slider */}
-<motion.div
-  className="result-slider-wrap"
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.6 }}
->
-  <ReactCompareSlider
-    itemOne={
-      <ReactCompareSliderImage
-        src={original}
-        alt="Original"
-        style={{ objectFit: "cover" }}
-      />
-    }
-    itemTwo={
-      <ReactCompareSliderImage
-        src={generated}
-        alt="Generated"
-        style={{ objectFit: "cover" }}
-      />
-    }
-    style={{
-      width: "100%",
-      height: "480px",
-      borderRadius: "12px",
-      overflow: "hidden",
-      border: "1px solid var(--border)"
-    }}
-  />
-  <div className="result-labels">
-    <span className="result-label">Original</span>
-    <span className="result-label">AI Generated</span>
-  </div>
+      <motion.div
+        className="result-slider-wrap"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <ReactCompareSlider
+          itemOne={
+            <ReactCompareSliderImage
+              src={original}
+              alt="Original"
+              style={{ objectFit: "cover" }}
+            />
+          }
+          itemTwo={
+            <ReactCompareSliderImage
+              src={generated}
+              alt="Generated"
+              style={{ objectFit: "cover" }}
+            />
+          }
+          style={{
+            width: "100%",
+            height: "480px",
+            borderRadius: "12px",
+            overflow: "hidden",
+            border: "1px solid var(--border)"
+          }}
+        />
+        <div className="result-labels">
+          <span className="result-label">Original</span>
+          <span className="result-label">AI Generated</span>
+        </div>
 
-  {/* Separate zoom button */}
-  <button
-    className="zoom-trigger-btn"
-    onClick={() => setZoomOpen(true)}
-    title="Click to zoom"
-  >
-    ⤢ Zoom
-  </button>
-</motion.div>
+        {/* Separate zoom button */}
+        <button
+          className="zoom-trigger-btn"
+          onClick={() => setZoomOpen(true)}
+          title="Click to zoom"
+        >
+          ⤢ Zoom
+        </button>
+      </motion.div>
 
       {/* Action Buttons */}
       <motion.div
@@ -177,10 +178,37 @@ useEffect(() => {
       </p>
 
       <StyleComparison
-  original={original}
-  currentImage={generated}
-  currentStyle={style}
-/>
+        original={original}
+        currentImage={generated}
+        currentStyle={style}
+      />
+
+      <motion.div
+        className="result-actions"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <button className="result-btn primary" onClick={handleDownload}>
+          ↓ Download Result
+        </button>
+        <button className="result-btn secondary" onClick={onNewStyle}>
+          ↺ Try Another Style
+        </button>
+        {canUndo && (
+          <motion.button
+            className="result-btn undo"
+            onClick={onUndo}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            ⟵ Undo Last Edit
+          </motion.button>
+        )}
+        <button className="result-btn secondary" onClick={onReset}>
+          + New Photo
+        </button>
+      </motion.div>
 
       {/* Zoom Modal */}
       <AnimatePresence>
@@ -225,15 +253,15 @@ useEffect(() => {
                   >✕</button>
                 </div>
               </div>
-<div
-  ref={zoomCanvasRef}
-  className="zoom-canvas"
-  onMouseDown={handleMouseDown}
-  onMouseMove={handleMouseMove}
-  onMouseUp={handleMouseUp}
-  onMouseLeave={handleMouseUp}
-  style={{ cursor: zoomScale > 1 ? (isDragging ? "grabbing" : "grab") : "zoom-in" }}
->
+              <div
+                ref={zoomCanvasRef}
+                className="zoom-canvas"
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                style={{ cursor: zoomScale > 1 ? (isDragging ? "grabbing" : "grab") : "zoom-in" }}
+              >
                 <motion.img
                   ref={imgRef}
                   src={generated}

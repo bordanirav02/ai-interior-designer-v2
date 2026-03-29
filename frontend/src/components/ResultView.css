@@ -228,3 +228,14 @@
   opacity: 0.5;
   flex-shrink: 0;
 }
+
+.result-btn.undo {
+  background: transparent;
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.result-btn.undo:hover {
+  background: rgba(224, 92, 92, 0.1);
+  transform: translateY(-2px);
+}

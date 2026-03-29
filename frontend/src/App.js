@@ -26,6 +26,7 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [previousImage, setPreviousImage] = useState(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -120,6 +121,10 @@ export default function App() {
     setLoading(true);
     setLoadingStep(0);
     setLoadingProgress(0);
+
+    // Save current image before editing for undo
+    setPreviousImage(generatedImage);
+
     try {
       setLoadingStep(1);
       setLoadingProgress(15);
@@ -155,13 +160,23 @@ export default function App() {
     }
   };
 
-  const handleReset = () => {
+  const handleUndo = () => {
+    if (previousImage) {
+      setGeneratedImage(previousImage);
+      setEditedImage(previousImage);
+      setPreviousImage(null);
+      setStep("result");
+    }
+  };
+
+ const handleReset = () => {
     setStep("upload");
     setUploadedImage(null);
     setSelectedStyle(null);
     setGeneratedImage(null);
     setDetectedObjects([]);
     setEditedImage(null);
+    setPreviousImage(null);
   };
 
   return (
@@ -394,20 +409,20 @@ export default function App() {
                 </p>
               </div>
               <ResultView
-                original={uploadedImage}
-                generated={step === "edit" ? editedImage : generatedImage}
-                style={selectedStyle}
-                objects={detectedObjects}
-                onEdit={handleEdit}
-                onReset={handleReset}
-                onNewStyle={() => setStep("style")}
-              />
-              {step === "result" && detectedObjects.length > 0 && (
-                <ObjectEditor
-                  objects={detectedObjects}
-                  onEdit={handleEdit}
-                />
-              )}
+  original={uploadedImage}
+  generated={step === "edit" ? editedImage : generatedImage}
+  style={selectedStyle}
+  onReset={handleReset}
+  onNewStyle={() => setStep("style")}
+  onUndo={handleUndo}
+  canUndo={!!previousImage}
+/>
+{step === "result" && detectedObjects.length > 0 && (
+  <ObjectEditor
+    objects={detectedObjects}
+    onEdit={handleEdit}
+  />
+)}
             </motion.div>
           )}
         </AnimatePresence>
