@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ReactCompareSlider, ReactCompareSliderImage } from "react-compare-slider";
 import "./ResultView.css";
+import StyleComparison from "./StyleComparison";
 
 export default function ResultView({ original, generated, style, onReset, onNewStyle }) {
   const [zoomOpen, setZoomOpen] = useState(false);
@@ -174,6 +175,12 @@ useEffect(() => {
       <p className="result-scroll-hint">
         ✦ Scroll down to edit individual objects in this room
       </p>
+
+      <StyleComparison
+  original={original}
+  currentImage={generated}
+  currentStyle={style}
+/>
 
       {/* Zoom Modal */}
       <AnimatePresence>
