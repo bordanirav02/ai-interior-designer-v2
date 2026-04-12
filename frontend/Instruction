@@ -2,6 +2,11 @@
 
 ---
 
+cd "D:\Full stack Development\ai-interior-designer-v2"
+git add .
+git commit -m "Add furnish room feature, style tabs, room-specific furniture, inpainting pipeline, color palette, custom prompts, progress bars, zoom modal, comparison view, generation history"
+git push origin main
+
 **Step 1 — Open Terminal 1 and start Flask:**
 ```powershell
 cd "D:\Full stack Development\ai-interior-designer-v2\backend"

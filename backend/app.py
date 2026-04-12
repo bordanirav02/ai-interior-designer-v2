@@ -75,8 +75,9 @@ def generate():
     data = request.json
     style = data.get("style")
     palette = data.get("palette")
-    if not style:
-        return jsonify({"error": "No style provided"}), 400
+    custom_prompt = data.get("customPrompt")
+    if not style and not custom_prompt:
+        return jsonify({"error": "No style or custom prompt provided"}), 400
     upload_path = os.path.join(UPLOAD_FOLDER, 'room_original.jpg')
     if not os.path.exists(upload_path):
         return jsonify({"error": "No uploaded image found"}), 400
@@ -84,12 +85,15 @@ def generate():
     try:
         response = requests.post(
             f"{COLAB_URL['url']}/colab-generate",
-            json={"image": image_b64, "style": style, "palette": palette},
+            json={"image": image_b64, "style": style, "palette": palette, "customPrompt": custom_prompt},
             headers=COLAB_HEADERS,
             timeout=120
         )
+        print(f"Colab response status: {response.status_code}")
+        print(f"Colab response text: {response.text[:500]}")
         result = response.json()
     except Exception as e:
+        print(f"FULL ERROR: {str(e)}")
         return jsonify({"error": f"Colab request failed: {str(e)}"}), 500
     if "image" not in result:
         return jsonify({"error": "Colab did not return an image", "details": result}), 500

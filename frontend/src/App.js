@@ -44,8 +44,8 @@ export default function App() {
     setStep("style");
   };
 
-  const handleGenerate = async (style, previewImage = null, palette = null) => {
-    setSelectedStyle(style);
+  const handleGenerate = async (style, previewImage = null, palette = null, customPrompt = null) => {
+    setSelectedStyle(customPrompt ? "custom" : style);
     setLoading(true);
     setLoadingStep(0);
     setLoadingProgress(0);
@@ -70,7 +70,7 @@ export default function App() {
       const res = await fetch("http://localhost:5000/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ style, palette }),
+        body: JSON.stringify({ style, palette, customPrompt }),
       });
 
       setLoadingStep(4);
@@ -87,7 +87,7 @@ export default function App() {
           id: Date.now(),
           image: "data:image/jpeg;base64," + data.image,
           original: uploadedImage,
-          style: style,
+          style: customPrompt ? "custom" : style,
           time: new Date().toLocaleTimeString()
         }, ...prev]);
 
@@ -169,7 +169,7 @@ export default function App() {
     }
   };
 
- const handleReset = () => {
+  const handleReset = () => {
     setStep("upload");
     setUploadedImage(null);
     setSelectedStyle(null);
@@ -191,9 +191,8 @@ export default function App() {
             {["Upload", "Style", "Result", "Edit"].map((s, i) => (
               <div
                 key={s}
-                className={`step-dot ${STEPS[i] === step ? "active" : ""} ${
-                  STEPS.indexOf(step) > i ? "done" : ""
-                }`}
+                className={`step-dot ${STEPS[i] === step ? "active" : ""} ${STEPS.indexOf(step) > i ? "done" : ""
+                  }`}
               >
                 <span className="step-num">{i + 1}</span>
                 <span className="step-label">{s}</span>
@@ -291,68 +290,67 @@ export default function App() {
       </AnimatePresence>
 
       {/* Loading Overlay */}
-<AnimatePresence>
-  {loading && (
-    <motion.div
-      className="loading-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <div className="loading-content">
-        <div className="loading-logo">◈</div>
-        <h2 className="loading-title">
-          {loadingStep <= 3 ? "Generating Your Design" :
-           loadingStep <= 5 ? "Finalizing Image" :
-           "Almost Ready"}
-        </h2>
-
-        {/* Progress Bar */}
-        <div className="loading-bar-wrap">
+      <AnimatePresence>
+        {loading && (
           <motion.div
-            className="loading-bar-fill"
-            initial={{ width: 0 }}
-            animate={{ width: `${loadingProgress}%` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          />
-        </div>
-        <span className="loading-percent">{loadingProgress}%</span>
+            className="loading-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="loading-content">
+              <div className="loading-logo">◈</div>
+              <h2 className="loading-title">
+                {loadingStep <= 3 ? "Generating Your Design" :
+                  loadingStep <= 5 ? "Finalizing Image" :
+                    "Almost Ready"}
+              </h2>
 
-        {/* Step Indicators */}
-        <div className="loading-steps">
-          {[
-            "Preparing image",
-            "Analyzing structure",
-            "Edge detection",
-            "Running Stable Diffusion",
-            "Applying ControlNet",
-            "Finalizing",
-            "Detecting objects"
-          ].map((label, i) => (
-            <motion.div
-              key={i}
-              className={`loading-step-item ${
-                loadingStep > i + 1 ? "done" :
-                loadingStep === i + 1 ? "active" : ""
-              }`}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <span className="loading-step-dot">
-                {loadingStep > i + 1 ? "✓" :
-                 loadingStep === i + 1 ? "●" : "○"}
-              </span>
-              <span className="loading-step-label">{label}</span>
-            </motion.div>
-          ))}
-        </div>
+              {/* Progress Bar */}
+              <div className="loading-bar-wrap">
+                <motion.div
+                  className="loading-bar-fill"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${loadingProgress}%` }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                />
+              </div>
+              <span className="loading-percent">{loadingProgress}%</span>
 
-        <p className="loading-sub">Powered by Stable Diffusion + ControlNet</p>
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
+              {/* Step Indicators */}
+              <div className="loading-steps">
+                {[
+                  "Preparing image",
+                  "Analyzing structure",
+                  "Edge detection",
+                  "Running Stable Diffusion",
+                  "Applying ControlNet",
+                  "Finalizing",
+                  "Detecting objects"
+                ].map((label, i) => (
+                  <motion.div
+                    key={i}
+                    className={`loading-step-item ${loadingStep > i + 1 ? "done" :
+                        loadingStep === i + 1 ? "active" : ""
+                      }`}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                  >
+                    <span className="loading-step-dot">
+                      {loadingStep > i + 1 ? "✓" :
+                        loadingStep === i + 1 ? "●" : "○"}
+                    </span>
+                    <span className="loading-step-label">{label}</span>
+                  </motion.div>
+                ))}
+              </div>
+
+              <p className="loading-sub">Powered by Stable Diffusion + ControlNet</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Content */}
       <main className="main">
@@ -409,20 +407,20 @@ export default function App() {
                 </p>
               </div>
               <ResultView
-  original={uploadedImage}
-  generated={step === "edit" ? editedImage : generatedImage}
-  style={selectedStyle}
-  onReset={handleReset}
-  onNewStyle={() => setStep("style")}
-  onUndo={handleUndo}
-  canUndo={!!previousImage}
-/>
-{step === "result" && detectedObjects.length > 0 && (
-  <ObjectEditor
-    objects={detectedObjects}
-    onEdit={handleEdit}
-  />
-)}
+                original={uploadedImage}
+                generated={step === "edit" ? editedImage : generatedImage}
+                style={selectedStyle}
+                onReset={handleReset}
+                onNewStyle={() => setStep("style")}
+                onUndo={handleUndo}
+                canUndo={!!previousImage}
+              />
+              {step === "result" && detectedObjects.length > 0 && (
+                <ObjectEditor
+                  objects={detectedObjects}
+                  onEdit={handleEdit}
+                />
+              )}
             </motion.div>
           )}
         </AnimatePresence>
