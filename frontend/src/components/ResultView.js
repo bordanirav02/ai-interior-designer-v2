@@ -5,7 +5,7 @@ import "./ResultView.css";
 import StyleComparison from "./StyleComparison";
 
 
-export default function ResultView({ original, generated, style, onReset, onNewStyle, onUndo, canUndo }) {
+export default function ResultView({ original, generated, style, onReset, onNewStyle, onUndo, canUndo, onRegisterDownload }) {
   const [zoomOpen, setZoomOpen] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
   const [zoomPos, setZoomPos] = useState({ x: 0, y: 0 });
@@ -23,6 +23,12 @@ export default function ResultView({ original, generated, style, onReset, onNewS
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
+
+  // Register download fn so App.js can trigger it via Ctrl+D
+  useEffect(() => {
+    if (onRegisterDownload) onRegisterDownload(handleDownload);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generated, style]);
 
   useEffect(() => {
     const canvas = zoomCanvasRef.current;
@@ -160,8 +166,8 @@ export default function ResultView({ original, generated, style, onReset, onNewS
           }
           style={{
             width: "100%",
-            height: "480px",
-            borderRadius: "12px",
+            height: window.innerWidth <= 600 ? "260px" : "480px",
+            borderRadius: window.innerWidth <= 600 ? "10px" : "12px",
             overflow: "hidden",
             border: "1px solid var(--border)"
           }}

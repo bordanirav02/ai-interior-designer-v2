@@ -1,0 +1,121 @@
+.toaster {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  min-width: 280px;
+  max-width: 380px;
+  border: 1px solid;
+  overflow: hidden;
+  pointer-events: all;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.toast-success {
+  background: rgba(76, 175, 130, 0.12);
+  border-color: rgba(76, 175, 130, 0.25);
+}
+
+.toast-error {
+  background: rgba(224, 92, 92, 0.12);
+  border-color: rgba(224, 92, 92, 0.25);
+}
+
+.toast-info {
+  background: rgba(201, 168, 76, 0.08);
+  border-color: rgba(201, 168, 76, 0.2);
+}
+
+.toast-warning {
+  background: rgba(251, 188, 5, 0.1);
+  border-color: rgba(251, 188, 5, 0.25);
+}
+
+.toast-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 600;
+}
+
+.toast-icon-success { color: #4caf82; background: rgba(76, 175, 130, 0.18); }
+.toast-icon-error   { color: #e05c5c; background: rgba(224, 92, 92, 0.18); }
+.toast-icon-info    { color: #c9a84c; background: rgba(201, 168, 76, 0.15); }
+.toast-icon-warning { color: #fbbc05; background: rgba(251, 188, 5, 0.15); }
+
+.toast-msg {
+  flex: 1;
+  font-size: 13px;
+  color: #e8e6df;
+  line-height: 1.4;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.toast-close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  font-size: 10px;
+  padding: 4px;
+  transition: color 0.2s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.toast-close:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  border-radius: 0 0 0 12px;
+}
+
+.toast-success .toast-progress { background: #4caf82; }
+.toast-error   .toast-progress { background: #e05c5c; }
+.toast-info    .toast-progress { background: #c9a84c; }
+.toast-warning .toast-progress { background: #fbbc05; }
+
+/* ─── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .toaster {
+    bottom: 0;
+    right: 0;
+    left: 0;
+    padding: 0 12px 12px;
+    gap: 8px;
+    /* Add safe area padding for notched phones */
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .toast {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+}

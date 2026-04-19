@@ -412,8 +412,58 @@
   opacity: 0.6;
 }
 
+/* ─── Mobile ─────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .furnish-styles {
-    grid-template-columns: repeat(2, 1fr);
+  .furnish-container { gap: 20px; }
+
+  /* Style preferences: 2 cols */
+  .furnish-styles { grid-template-columns: repeat(2, 1fr); }
+
+  /* Room type buttons: 2 per row */
+  .furnish-room-types { gap: 8px; }
+  .furnish-room-btn { flex: 1 1 calc(50% - 8px); justify-content: center; min-width: 0; }
+
+  /* Category tabs: horizontal scroll (no wrap) */
+  .furnish-categories {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 12px;
+    scrollbar-width: none;
+    gap: 8px;
   }
+  .furnish-categories::-webkit-scrollbar { display: none; }
+  .furnish-cat-btn { flex-shrink: 0; }
+
+  /* Furniture items: horizontal scroll */
+  .furnish-items {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .furnish-items::-webkit-scrollbar { display: none; }
+  .furnish-item-btn { flex-shrink: 0; }
+
+  /* Custom input: stack vertically */
+  .furnish-custom-input { flex-direction: column; }
+  .furnish-custom-add { align-self: flex-end; }
+
+  /* Generate button: full width */
+  .furnish-generate-btn { width: 100%; align-self: stretch; padding: 16px; }
+
+  /* Preview image: full width */
+  .furnish-preview { max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+  /* Style preferences: 1 col on very small */
+  .furnish-styles { grid-template-columns: 1fr; }
+
+  /* Room type buttons: 1 per row on tiny screens */
+  .furnish-room-btn { flex: 1 1 100%; }
+
+  /* Section title: smaller */
+  .furnish-section-title { font-size: 14px; }
 }

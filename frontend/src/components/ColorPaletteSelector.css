@@ -272,3 +272,31 @@
   color: var(--text-muted);
   font-style: italic;
 }
+
+/* ─── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .cps-wrapper { max-width: 100%; }
+  .cps-toggle { padding: 14px 16px; }
+
+  /* Palette grid: 2 columns on mobile */
+  .cps-presets {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  /* Custom swatches: wrap on mobile */
+  .cps-custom-swatches {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  /* Tabs: smaller */
+  .cps-tab { padding: 10px 16px; font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+  /* Preset cards: touch-friendly size */
+  .cps-preset { padding: 10px; }
+  .cps-preset-name { font-size: 11px; }
+}

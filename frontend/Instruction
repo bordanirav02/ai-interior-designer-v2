@@ -1,76 +1,209 @@
-## Complete Startup Guide
+## InteriorAI — Complete Deployment & Startup Guide
+## 100% Free Stack
 
 ---
 
-cd "D:\Full stack Development\ai-interior-designer-v2"
-git add .
-git commit -m "Add furnish room feature, style tabs, room-specific furniture, inpainting pipeline, color palette, custom prompts, progress bars, zoom modal, comparison view, generation history"
-git push origin main
-git push backup main
+## FREE STACK OVERVIEW
 
-**Step 1 — Open Terminal 1 and start Flask:**
-```powershell
-cd "D:\Full stack Development\ai-interior-designer-v2\backend"
-venv\Scripts\activate
-python app.py
-```
-Wait for `Running on http://127.0.0.1:5000` — keep this terminal open.
+| Component   | Service         | Cost  | Status        |
+|-------------|-----------------|-------|---------------|
+| Frontend    | Vercel          | Free  | Always live   |
+| Flask API   | Render.com      | Free  | Always live   |
+| AI Models   | Google Colab    | Free  | Start manually|
+| Auth/DB     | Firebase        | Free  | Always live   |
+| Tunnel      | ngrok           | Free  | Per session   |
 
----
-
-**Step 2 — Open Terminal 2 and start React:**
-```powershell
-cd "D:\Full stack Development\ai-interior-designer-v2\frontend"
-npm start
-```
-Wait for browser to open at `http://localhost:3000` — keep this terminal open.
+The app is accessible from ANY device 24/7.
+AI generation only works when you start Colab (takes ~5 min to load models).
 
 ---
 
-**Step 3 — Open Google Colab and run cells in order:**
+## ONE-TIME SETUP (do this once)
 
-1. Imports
-2. Cache directory
-3. Load ControlNet
-4. Load Stable Diffusion
-5. Load Inpainting pipeline
-6. Load YOLOv8
-7. Load SAM
-8. Helper functions
-9. Style prompts
+### A — Deploy Flask Backend to Render.com
+
+1. Go to https://render.com and sign up (free, no credit card needed)
+
+2. Click "New +" → "Web Service"
+
+3. Connect your GitHub repo → select this repo
+
+4. Configure:
+   - Name: interior-ai-backend
+   - Root Directory: backend
+   - Build Command: pip install -r requirements.txt
+   - Start Command: gunicorn -w 2 -b 0.0.0.0:$PORT app:app
+   - Plan: Free
+
+5. Add Environment Variables (click "Add Environment Variable"):
+   - ALLOWED_ORIGINS = https://your-app.vercel.app
+     (replace with your actual Vercel URL)
+
+6. Click "Create Web Service"
+   → Wait ~3 minutes for first deploy
+   → You get a URL like: https://interior-ai-backend.onrender.com
+   → Save this URL — you will use it forever
+
+### B — Add Backend URL to Vercel
+
+1. Go to vercel.com → your project → Settings → Environment Variables
+
+2. Add:
+   - Name:  REACT_APP_API_URL
+   - Value: https://interior-ai-backend.onrender.com
+     (use YOUR actual Render URL)
+
+3. Click Save → go to Deployments → click "Redeploy" on latest deployment
+
+4. Done. Your Vercel frontend now talks to your Render backend.
+
+### C — Update Your Startup Guide (Step 4)
+
+The ONLY change to your existing Colab workflow:
+  OLD: Invoke-WebRequest -Uri "http://localhost:5000/set-colab-url" ...
+  NEW: Invoke-WebRequest -Uri "https://interior-ai-backend.onrender.com/set-colab-url" ...
+
+---
+
+## DAILY STARTUP (when you want to use AI features)
+
+Steps 1 and 2 (local Flask + local React) are NO LONGER NEEDED.
+The app runs on Vercel + Render automatically.
+
+You only need to do this when you want AI generation:
+
+**Step 1 — Open Google Colab and run all cells in order:**
+
+1.  Imports
+2.  Cache directory
+3.  Load ControlNet
+4.  Load Stable Diffusion
+5.  Load Inpainting pipeline
+6.  Load YOLOv8
+7.  Load SAM
+8.  Helper functions
+9.  Style prompts
 10. generate_style function
 11. detect_objects function
 12. edit_object function
 13. Flask API + ngrok cell
 14. ngrok auth token cell
 
-Wait for the URL to print.
+Wait for the ngrok URL to print (example: https://xyz-abc.ngrok-free.app)
 
 ---
 
-**Step 4 — Open Terminal 3 and register the Colab URL:**
+**Step 2 — Register the Colab URL with your Render backend:**
+
+Windows PowerShell:
 ```powershell
-Invoke-WebRequest -Uri "http://localhost:5000/set-colab-url" -Method POST -ContentType "application/json" -Body '{"url": "https://elza-gradualistic-cyril.ngrok-free.dev"}'
+Invoke-WebRequest `
+  -Uri "https://interior-ai-backend.onrender.com/set-colab-url" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"url": "https://YOUR-NGROK-URL.ngrok-free.app"}'
 ```
 
----
-
-**Step 5 — Verify everything is connected:**
-```powershell
-Invoke-WebRequest -Uri "http://localhost:5000/health" -Method GET
+Mac/Linux terminal:
+```bash
+curl -X POST https://interior-ai-backend.onrender.com/set-colab-url \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://YOUR-NGROK-URL.ngrok-free.app"}'
 ```
-You should see `colab_connected: true`
+
+Replace YOUR-NGROK-URL with the actual URL from Colab.
 
 ---
 
-**Step 6 — Open the app:**
+**Step 3 — Verify connection:**
 
-Go to `http://localhost:3000` and you are ready.
+```powershell
+Invoke-WebRequest -Uri "https://interior-ai-backend.onrender.com/health" -Method GET
+```
+
+You should see:
+  "colab_connected": true
+  "mode": "colab"
 
 ---
 
-**Important reminders:**
-- Keep Terminal 1 (Flask) and Terminal 2 (React) open at all times
-- The ngrok URL changes every session — always re-register it in Step 4
-- If generation fails, check that Colab Flask cell is still running — re-run it if needed
-- Models load from Google Drive so steps 3-7 in Colab are fast after first setup
+**Step 4 — Open the app:**
+
+Go to your Vercel URL (e.g. https://your-app.vercel.app)
+The app is now live for everyone on any device.
+
+---
+
+## IMPORTANT NOTES
+
+Render free tier:
+- The backend "sleeps" after 15 minutes with no traffic
+- First request after sleep takes ~30 seconds (cold start)
+- This is normal — just wait a moment on first load
+- 750 free hours/month = enough for one always-on service
+
+ngrok free tier:
+- URL changes every time you restart the Colab session
+- Always re-run Step 2 after restarting Colab
+- Keep the Colab tab open — it disconnects if the browser tab closes
+
+Google Colab free:
+- T4 GPU — fast enough for all features
+- Sessions last up to 12 hours
+- If Colab disconnects: re-run all cells → re-register URL (Step 2)
+- Models load from Google Drive — fast after first load (~2 min)
+
+---
+
+## SHARING WITH OTHERS
+
+Once Colab is running and URL is registered:
+- Share your Vercel URL with anyone
+- They can use style transfer, history, etc.
+- They cannot run AI if Colab is not active (will see "Offline" status)
+
+---
+
+## LOCAL DEVELOPMENT (optional, for coding)
+
+If you want to run locally while coding:
+
+```powershell
+# Terminal 1 — Flask
+cd "D:\Full stack Development\ai-interior-designer-v2\backend"
+venv\Scripts\activate
+python app.py
+
+# Terminal 2 — React
+cd "D:\Full stack Development\ai-interior-designer-v2\frontend"
+npm start
+```
+
+Then register Colab URL to localhost as before:
+```powershell
+Invoke-WebRequest -Uri "http://localhost:5000/set-colab-url" -Method POST `
+  -ContentType "application/json" `
+  -Body '{"url": "https://YOUR-NGROK-URL.ngrok-free.app"}'
+```
+
+Local dev uses REACT_APP_API_URL from .env.local (defaults to localhost:5000).
+
+---
+
+## TROUBLESHOOTING
+
+App shows "Offline" (red dot):
+→ Render backend may be sleeping — wait 30s and refresh
+→ Check https://interior-ai-backend.onrender.com/health in browser
+
+App shows "Partial" (yellow dot):
+→ Render is running but Colab is not connected
+→ Start Colab and run Step 2
+
+Generation fails / times out:
+→ Check that Colab Flask cell is still running (cell 13)
+→ Re-run Colab Flask cell → re-register URL
+
+Vercel build fails:
+→ Make sure REACT_APP_API_URL is set in Vercel env vars
+→ Trigger redeploy after adding env var

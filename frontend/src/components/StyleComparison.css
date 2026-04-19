@@ -269,8 +269,36 @@
   box-shadow: 0 4px 16px rgba(201, 168, 76, 0.3);
 }
 
+/* ─── Mobile ─────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .comparison-grid {
-    grid-template-columns: 1fr;
+  /* Stack panels vertically */
+  .comparison-grid { grid-template-columns: 1fr; }
+
+  /* Picker: reduce padding */
+  .comp-picker { padding: 16px; }
+
+  /* Style buttons: horizontal scroll */
+  .comp-style-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: none;
   }
+  .comp-style-list::-webkit-scrollbar { display: none; }
+  .comp-style-btn { flex-shrink: 0; }
+
+  /* Actions: full-width buttons */
+  .comp-actions { flex-direction: column; padding: 14px 16px; gap: 8px; }
+  .comp-download-btn, .comp-reset-btn { width: 100%; text-align: center; padding: 14px; }
+
+  /* Generate button: full width */
+  .comp-generate-btn { align-self: stretch; text-align: center; padding: 14px; }
+
+  /* Trigger button: full width */
+  .comparison-trigger { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .comp-label { padding: 8px 12px; font-size: 11px; }
 }

@@ -223,3 +223,46 @@
   font-weight: 500;
   text-transform: capitalize;
 }
+
+/* ─── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .editor-container { margin-top: 32px; }
+  .editor-header { padding: 18px 16px; }
+  .objects-section { padding: 18px 16px; }
+  .edit-input-section { padding: 18px 16px; }
+  .edit-history { padding: 12px 16px; }
+
+  /* Object chips: horizontal scroll */
+  .objects-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    gap: 8px;
+  }
+  .objects-list::-webkit-scrollbar { display: none; }
+  .object-chip { flex-shrink: 0; }
+
+  /* Suggestions: horizontal scroll */
+  .suggestions {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .suggestions::-webkit-scrollbar { display: none; }
+  .suggestion-chip { flex-shrink: 0; }
+
+  /* Input row: stack vertically */
+  .edit-input-row { flex-direction: column; gap: 8px; }
+  .edit-submit-btn { align-self: flex-end; padding: 13px 28px; }
+  .edit-input { font-size: 16px; }
+}
+
+@media (max-width: 480px) {
+  .editor-title h2 { font-size: 18px; }
+  .object-chip { padding: 10px 16px; font-size: 13px; min-height: 44px; }
+  .edit-submit-btn { align-self: stretch; text-align: center; }
+}

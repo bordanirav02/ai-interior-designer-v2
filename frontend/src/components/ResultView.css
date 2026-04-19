@@ -306,3 +306,80 @@
   font-size: 11px;
   color: var(--text-muted);
 }
+
+/* ─── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .result-container {
+    max-width: 100%;
+    gap: 16px;
+  }
+
+  /* Compare slider: shorter on mobile */
+  .result-slider-wrap :global([data-rcs-handle-container]),
+  .result-slider-wrap > div {
+    height: 280px !important;
+  }
+
+  /* Action buttons: 2-column grid on mobile */
+  .result-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .result-btn {
+    padding: 13px 12px;
+    font-size: 12px;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* Primary button spans full width */
+  .result-btn.primary {
+    grid-column: 1 / -1;
+    padding: 15px;
+    font-size: 14px;
+  }
+
+  /* Undo button spans full width */
+  .result-btn.undo { grid-column: 1 / -1; }
+
+  /* Scroll hint */
+  .result-scroll-hint { font-size: 11px; text-align: center; }
+
+  /* Share panel: full width */
+  .share-panel { max-width: 100%; }
+
+  /* Zoom modal: true full-screen on mobile */
+  .zoom-modal {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+  }
+
+  /* Zoom toolbar: smaller on mobile */
+  .zoom-toolbar { padding: 10px 14px; }
+  .zoom-title { font-size: 11px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .zoom-ctrl-btn { width: 36px; height: 36px; font-size: 18px; }
+  .zoom-close-btn { width: 36px; height: 36px; }
+
+  /* Zoom footer: hide on small screens to save space */
+  .zoom-footer { display: none; }
+
+  /* Zoom trigger button: larger touch target */
+  .zoom-trigger-btn { padding: 10px 16px; font-size: 12px; bottom: 44px; }
+}
+
+@media (max-width: 480px) {
+  /* Action buttons: stack full-width on very small screens */
+  .result-actions { grid-template-columns: 1fr; }
+  .result-btn.primary { grid-column: 1; }
+  .result-btn.undo { grid-column: 1; }
+
+  .result-btn { padding: 14px 16px; font-size: 13px; }
+
+  /* Share options: larger touch targets */
+  .share-option-btn { padding: 14px 16px; }
+}

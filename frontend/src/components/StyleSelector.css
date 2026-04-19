@@ -343,10 +343,62 @@
   to { transform: rotate(360deg); }
 }
 
+/* ─── Mobile ─────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .previews-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .style-container { gap: 20px; }
+
+  /* Preview thumbnails: 2 cols */
+  .previews-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+  /* Style cards: 1 column */
+  .styles-grid { grid-template-columns: 1fr; }
+
+  /* Style tabs: full width */
+  .style-tabs { max-width: 100%; }
+  .style-tab { padding: 13px 12px; font-size: 13px; }
+
+  /* Preview strip */
+  .style-preview-strip { max-width: 100%; }
+
+  /* Modal: stack vertically instead of side-by-side */
+  .modal-images { grid-template-columns: 1fr; }
+  .modal-content { padding: 16px; border-radius: 0; }
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal-actions { flex-direction: column; align-items: stretch; }
+  .modal-select-btn { width: 100%; text-align: center; }
+
+  /* Generate button: full width */
+  .generate-btn { width: 100%; justify-content: center; padding: 16px; }
+  .generate-section { width: 100%; }
+
+  /* Preview all button: full width */
+  .preview-all-btn { width: 100%; justify-content: center; }
+  .preview-all-section { width: 100%; }
+
+  /* Custom prompt: reduce padding */
+  .custom-prompt-header { padding: 12px 14px; }
+  .custom-prompt-input { padding: 12px 14px; font-size: 15px; }
+  .custom-prompt-footer { padding: 8px 14px 12px; }
+  .custom-prompt-section { max-width: 100%; }
+
+  /* Styles section label */
+  .styles-section-label { align-self: center; }
+
+  /* Preview loading box */
+  .preview-loading-box { padding: 24px 16px; }
+}
+
+@media (max-width: 480px) {
+  /* Style cards: full width single col */
+  .style-card { padding: 16px; }
+  .style-icon { font-size: 20px; }
+
+  /* Thumb grid: 2 cols still fine */
+  .previews-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+
+  /* Example chips: wrap and smaller */
+  .example-chip { font-size: 10px; padding: 3px 8px; }
+  .custom-prompt-examples { gap: 5px; }
 }
 
 /* Zoom Icon on Thumbnail */

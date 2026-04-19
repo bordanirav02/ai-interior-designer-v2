@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./firebase";
@@ -9,11 +9,23 @@ import StyleSelector from "./components/StyleSelector";
 import ResultView from "./components/ResultView";
 import ObjectEditor from "./components/ObjectEditor";
 import Auth from "./components/Auth";
+import { ToastProvider, useToast } from "./components/Toast";
+import { API_URL } from "./config";
 import "./App.css";
 
 const STEPS = ["upload", "style", "result", "edit"];
 
-export default function App() {
+const SHORTCUTS = [
+  { key: "Ctrl + Z", desc: "Undo last edit" },
+  { key: "Ctrl + H", desc: "Toggle history panel" },
+  { key: "Ctrl + D", desc: "Download current result" },
+  { key: "?",        desc: "Show keyboard shortcuts" },
+  { key: "Esc",      desc: "Close any open panel" },
+];
+
+function AppInner() {
+  const toast = useToast();
+
   const [step, setStep] = useState("upload");
   const [uploadedImage, setUploadedImage] = useState(null);
   const [selectedStyle, setSelectedStyle] = useState(null);
@@ -21,7 +33,6 @@ export default function App() {
   const [detectedObjects, setDetectedObjects] = useState([]);
   const [editedImage, setEditedImage] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [loadingMsg, setLoadingMsg] = useState("");
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [history, setHistory] = useState([]);
@@ -29,7 +40,18 @@ export default function App() {
   const [loadingStep, setLoadingStep] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [previousImage, setPreviousImage] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState("checking");
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
+  const downloadRef = useRef(null);
+  const generatedImageRef = useRef(null);
+  const previousImageRef = useRef(null);
+
+  // Keep refs in sync for keyboard shortcut handlers (avoid stale closures)
+  useEffect(() => { generatedImageRef.current = generatedImage; }, [generatedImage]);
+  useEffect(() => { previousImageRef.current = previousImage; }, [previousImage]);
+
+  // Auth listener
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -38,12 +60,102 @@ export default function App() {
     return unsub;
   }, []);
 
+  // Restore history from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("interiorai_history");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setHistory(parsed);
+          toast(`Restored ${parsed.length} item${parsed.length > 1 ? "s" : ""} from last session`, "info", 3000);
+        }
+      }
+    } catch { /* ignore corrupt storage */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist history to localStorage whenever it changes
+  useEffect(() => {
+    if (history.length > 0) {
+      try {
+        localStorage.setItem("interiorai_history", JSON.stringify(history.slice(0, 8)));
+      } catch { /* storage full — ignore */ }
+    }
+  }, [history]);
+
+  // Connection status polling
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const res = await fetch("${API_URL}/health", {
+          signal: AbortSignal.timeout(5000),
+        });
+        const data = await res.json();
+        setConnectionStatus(data.colab_connected ? "full" : "partial");
+      } catch {
+        setConnectionStatus("offline");
+      }
+    };
+
+    checkHealth();
+    const interval = setInterval(checkHealth, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e) => {
+      const tag = document.activeElement?.tagName;
+      const isTyping = tag === "INPUT" || tag === "TEXTAREA";
+
+      if (e.key === "Escape") {
+        setShowHistory(false);
+        setShowShortcuts(false);
+        return;
+      }
+
+      if (e.key === "?" && !isTyping && !e.ctrlKey && !e.metaKey) {
+        setShowShortcuts(p => !p);
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && !isTyping) {
+        if (e.key === "z") {
+          e.preventDefault();
+          if (previousImageRef.current) {
+            handleUndoKb();
+          } else {
+            toast("Nothing to undo", "info", 2000);
+          }
+        }
+        if (e.key === "h") {
+          e.preventDefault();
+          setShowHistory(p => !p);
+        }
+        if (e.key === "d" && generatedImageRef.current) {
+          e.preventDefault();
+          downloadRef.current?.();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const registerDownload = useCallback((fn) => {
+    downloadRef.current = fn;
+  }, []);
+
   if (!authChecked) return null;
   if (!user) return <Auth onLogin={setUser} />;
 
   const handleUpload = (imageData) => {
     setUploadedImage(imageData);
     setStep("style");
+    toast("Photo uploaded — choose your style!", "success");
   };
 
   const handleGenerate = async (style, previewImage = null, palette = null, customPrompt = null) => {
@@ -58,46 +170,41 @@ export default function App() {
     }
 
     try {
-      setLoadingStep(1);
-      setLoadingProgress(10);
+      setLoadingStep(1); setLoadingProgress(10);
       await new Promise(r => setTimeout(r, 500));
 
-      setLoadingStep(2);
-      setLoadingProgress(20);
+      setLoadingStep(2); setLoadingProgress(20);
       await new Promise(r => setTimeout(r, 500));
 
-      setLoadingStep(3);
-      setLoadingProgress(30);
+      setLoadingStep(3); setLoadingProgress(30);
 
-      const res = await fetch("http://localhost:5000/generate", {
+      const res = await fetch("${API_URL}/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ style, palette, customPrompt }),
       });
 
-      setLoadingStep(4);
-      setLoadingProgress(60);
+      setLoadingStep(4); setLoadingProgress(60);
 
       const data = await res.json();
 
       if (data.image) {
-        setLoadingStep(5);
-        setLoadingProgress(80);
-        setGeneratedImage("data:image/jpeg;base64," + data.image);
+        setLoadingStep(5); setLoadingProgress(80);
+        const imgSrc = "data:image/jpeg;base64," + data.image;
+        setGeneratedImage(imgSrc);
 
         setHistory(prev => [{
           id: Date.now(),
-          image: "data:image/jpeg;base64," + data.image,
+          image: imgSrc,
           original: uploadedImage,
           style: customPrompt ? "custom" : style,
-          time: new Date().toLocaleTimeString()
+          time: new Date().toLocaleTimeString(),
         }, ...prev]);
 
-        setLoadingStep(6);
-        setLoadingProgress(90);
+        setLoadingStep(6); setLoadingProgress(90);
         if (!previewImage) setStep("result");
 
-        const detectRes = await fetch("http://localhost:5000/detect-objects", {
+        const detectRes = await fetch("${API_URL}/detect-objects", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({}),
@@ -105,13 +212,16 @@ export default function App() {
         const detectData = await detectRes.json();
         setDetectedObjects(detectData.objects || []);
 
-        setLoadingStep(7);
-        setLoadingProgress(100);
-        await new Promise(r => setTimeout(r, 500));
+        setLoadingStep(7); setLoadingProgress(100);
+        await new Promise(r => setTimeout(r, 400));
         setStep("result");
+
+        toast(`${customPrompt ? "Custom style" : style.replace(/_/g, " ")} applied!`, "success");
+      } else {
+        toast(data.error || "Generation failed", "error");
       }
     } catch (err) {
-      alert("Generation failed: " + err.message);
+      toast("Generation failed — is the backend running?", "error");
     } finally {
       setLoading(false);
       setLoadingStep(0);
@@ -123,38 +233,36 @@ export default function App() {
     setLoading(true);
     setLoadingStep(0);
     setLoadingProgress(0);
-
-    // Save current image before editing for undo
     setPreviousImage(generatedImage);
 
     try {
-      setLoadingStep(1);
-      setLoadingProgress(15);
+      setLoadingStep(1); setLoadingProgress(15);
       await new Promise(r => setTimeout(r, 400));
 
-      setLoadingStep(2);
-      setLoadingProgress(35);
+      setLoadingStep(2); setLoadingProgress(35);
 
-      const res = await fetch("http://localhost:5000/edit-object", {
+      const res = await fetch("${API_URL}/edit-object", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ object, prompt }),
       });
 
-      setLoadingStep(3);
-      setLoadingProgress(70);
+      setLoadingStep(3); setLoadingProgress(70);
       const data = await res.json();
 
       if (data.image) {
-        setLoadingStep(4);
-        setLoadingProgress(100);
+        setLoadingStep(4); setLoadingProgress(100);
         await new Promise(r => setTimeout(r, 400));
-        setEditedImage("data:image/jpeg;base64," + data.image);
-        setGeneratedImage("data:image/jpeg;base64," + data.image);
+        const imgSrc = "data:image/jpeg;base64," + data.image;
+        setEditedImage(imgSrc);
+        setGeneratedImage(imgSrc);
         setStep("edit");
+        toast(`${object} edited successfully`, "success");
+      } else {
+        toast(data.error || "Edit failed", "error");
       }
     } catch (err) {
-      alert("Edit failed: " + err.message);
+      toast("Edit failed — check backend connection", "error");
     } finally {
       setLoading(false);
       setLoadingStep(0);
@@ -168,6 +276,18 @@ export default function App() {
       setEditedImage(previousImage);
       setPreviousImage(null);
       setStep("result");
+      toast("Edit undone", "info", 2000);
+    }
+  };
+
+  const handleUndoKb = () => {
+    const prev = previousImageRef.current;
+    if (prev) {
+      setGeneratedImage(prev);
+      setEditedImage(prev);
+      setPreviousImage(null);
+      setStep("result");
+      toast("Edit undone", "info", 2000);
     }
   };
 
@@ -181,35 +301,67 @@ export default function App() {
     setPreviousImage(null);
   };
 
+  const connLabel = { checking: "Checking", full: "Live", partial: "Partial", offline: "Offline" };
+  const connTip = {
+    checking: "Checking connection...",
+    full: "Flask + Colab connected",
+    partial: "Flask running — Colab not connected",
+    offline: "Backend offline — start Flask first",
+  };
+
   return (
     <div className="app">
+      {/* Ambient background orbs */}
+      <div className="ambient-bg" aria-hidden="true">
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
+        <div className="orb orb-3" />
+      </div>
+
       <header className="header">
         <div className="header-inner">
           <div className="logo" onClick={handleReset}>
             <span className="logo-icon">◈</span>
             <span className="logo-text">Interior<em>AI</em></span>
           </div>
+
           <div className="step-indicators">
             {["Upload", "Style", "Result", "Edit"].map((s, i) => (
               <div
                 key={s}
-                className={`step-dot ${STEPS[i] === step ? "active" : ""} ${STEPS.indexOf(step) > i ? "done" : ""
-                  }`}
+                className={`step-dot ${STEPS[i] === step ? "active" : ""} ${STEPS.indexOf(step) > i ? "done" : ""}`}
               >
-                <span className="step-num">{i + 1}</span>
+                <span className="step-num">{STEPS.indexOf(step) > i ? "✓" : i + 1}</span>
                 <span className="step-label">{s}</span>
               </div>
             ))}
           </div>
+
           <div className="user-info">
+            {/* Connection status */}
+            <div
+              className={`conn-status conn-${connectionStatus}`}
+              title={connTip[connectionStatus]}
+            >
+              <span className="conn-dot" />
+              <span className="conn-label">{connLabel[connectionStatus]}</span>
+            </div>
+
             {history.length > 0 && (
-              <button
-                className="history-btn"
-                onClick={() => setShowHistory(true)}
-              >
+              <button className="history-btn" onClick={() => setShowHistory(true)}>
                 ◷ History ({history.length})
               </button>
             )}
+
+            {/* Keyboard shortcuts hint */}
+            <button
+              className="shortcuts-hint-btn"
+              onClick={() => setShowShortcuts(true)}
+              title="Keyboard shortcuts (?)"
+            >
+              ⌨
+            </button>
+
             {user.photoURL && (
               <img src={user.photoURL} alt="Profile" className="user-avatar" />
             )}
@@ -241,10 +393,7 @@ export default function App() {
             >
               <div className="history-header">
                 <h2>Generation History</h2>
-                <button
-                  className="history-close"
-                  onClick={() => setShowHistory(false)}
-                >✕</button>
+                <button className="history-close" onClick={() => setShowHistory(false)}>✕</button>
               </div>
               <div className="history-list">
                 {history.map((item) => (
@@ -258,6 +407,7 @@ export default function App() {
                       setSelectedStyle(item.style);
                       setStep("result");
                       setShowHistory(false);
+                      toast("Design restored from history", "info", 2000);
                     }}
                   >
                     <div className="history-thumb">
@@ -279,7 +429,9 @@ export default function App() {
                     className="clear-history-btn"
                     onClick={() => {
                       setHistory([]);
+                      localStorage.removeItem("interiorai_history");
                       setShowHistory(false);
+                      toast("History cleared", "info", 2000);
                     }}
                   >
                     Clear History
@@ -288,6 +440,42 @@ export default function App() {
               )}
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Keyboard Shortcuts Modal */}
+      <AnimatePresence>
+        {showShortcuts && (
+          <motion.div
+            className="shortcuts-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowShortcuts(false)}
+          >
+            <motion.div
+              className="shortcuts-modal"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 22, stiffness: 250 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="shortcuts-header">
+                <span className="shortcuts-icon">⌨</span>
+                <h3>Keyboard Shortcuts</h3>
+                <button className="shortcuts-close" onClick={() => setShowShortcuts(false)}>✕</button>
+              </div>
+              <div className="shortcuts-list">
+                {SHORTCUTS.map(s => (
+                  <div className="shortcut-row" key={s.key}>
+                    <kbd className="shortcut-key">{s.key}</kbd>
+                    <span className="shortcut-desc">{s.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -301,14 +489,15 @@ export default function App() {
             exit={{ opacity: 0 }}
           >
             <div className="loading-content">
-              <div className="loading-logo">◈</div>
+              <div className="loading-ring-wrap">
+                <div className="loading-ring" />
+                <div className="loading-logo-inner">◈</div>
+              </div>
               <h2 className="loading-title">
                 {loadingStep <= 3 ? "Generating Your Design" :
-                  loadingStep <= 5 ? "Finalizing Image" :
-                    "Almost Ready"}
+                  loadingStep <= 5 ? "Finalizing Image" : "Almost Ready"}
               </h2>
 
-              {/* Progress Bar */}
               <div className="loading-bar-wrap">
                 <motion.div
                   className="loading-bar-fill"
@@ -316,10 +505,15 @@ export default function App() {
                   animate={{ width: `${loadingProgress}%` }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
                 />
+                <motion.div
+                  className="loading-bar-glow"
+                  animate={{ opacity: [0.6, 1, 0.6] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  style={{ width: `${loadingProgress}%` }}
+                />
               </div>
               <span className="loading-percent">{loadingProgress}%</span>
 
-              {/* Step Indicators */}
               <div className="loading-steps">
                 {[
                   "Preparing image",
@@ -328,20 +522,17 @@ export default function App() {
                   "Running Stable Diffusion",
                   "Applying ControlNet",
                   "Finalizing",
-                  "Detecting objects"
+                  "Detecting objects",
                 ].map((label, i) => (
                   <motion.div
                     key={i}
-                    className={`loading-step-item ${loadingStep > i + 1 ? "done" :
-                        loadingStep === i + 1 ? "active" : ""
-                      }`}
+                    className={`loading-step-item ${loadingStep > i + 1 ? "done" : loadingStep === i + 1 ? "active" : ""}`}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05 }}
                   >
                     <span className="loading-step-dot">
-                      {loadingStep > i + 1 ? "✓" :
-                        loadingStep === i + 1 ? "●" : "○"}
+                      {loadingStep > i + 1 ? "✓" : loadingStep === i + 1 ? "●" : "○"}
                     </span>
                     <span className="loading-step-label">{label}</span>
                   </motion.div>
@@ -366,6 +557,14 @@ export default function App() {
               transition={{ duration: 0.5 }}
             >
               <div className="page-header">
+                <motion.div
+                  className="page-badge"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  ✦ AI-Powered Interior Design
+                </motion.div>
                 <h1>Transform Your Space</h1>
                 <p>Upload a room photo and watch AI reimagine it in any design style</p>
               </div>
@@ -385,10 +584,7 @@ export default function App() {
                 <h1>Choose Your Style</h1>
                 <p>Select a design aesthetic to transform your room</p>
               </div>
-              <StyleSelector
-                uploadedImage={uploadedImage}
-                onGenerate={handleGenerate}
-              />
+              <StyleSelector uploadedImage={uploadedImage} onGenerate={handleGenerate} />
             </motion.div>
           )}
 
@@ -405,7 +601,7 @@ export default function App() {
                 <p>
                   {step === "edit"
                     ? "Object replaced with precision using AI inpainting"
-                    : `${selectedStyle} style applied — drag slider to compare`}
+                    : `${selectedStyle?.replace(/_/g, " ")} style applied — drag slider to compare`}
                 </p>
               </div>
               <ResultView
@@ -416,17 +612,23 @@ export default function App() {
                 onNewStyle={() => setStep("style")}
                 onUndo={handleUndo}
                 canUndo={!!previousImage}
+                onRegisterDownload={registerDownload}
               />
               {step === "result" && detectedObjects.length > 0 && (
-                <ObjectEditor
-                  objects={detectedObjects}
-                  onEdit={handleEdit}
-                />
+                <ObjectEditor objects={detectedObjects} onEdit={handleEdit} />
               )}
             </motion.div>
           )}
         </AnimatePresence>
       </main>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <AppInner />
+    </ToastProvider>
   );
 }

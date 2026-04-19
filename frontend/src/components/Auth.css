@@ -282,12 +282,32 @@
   background: var(--surface);
 }
 
-/* Responsive */
+/* ─── Mobile ─────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .auth-page {
-    grid-template-columns: 1fr;
+  /* Single column — hide left brand panel */
+  .auth-page { grid-template-columns: 1fr; }
+  .auth-left { display: none; }
+
+  /* Right panel: full height, vertically centered */
+  .auth-right {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
   }
-  .auth-left {
-    display: none;
-  }
+
+  /* Card: full width */
+  .auth-card { width: 100%; max-width: 420px; }
+}
+
+@media (max-width: 480px) {
+  .auth-right { padding: 16px; align-items: flex-start; padding-top: 40px; }
+  .auth-card { padding: 24px 20px; }
+
+  /* Inputs: larger touch targets */
+  .auth-field input { padding: 14px 16px; font-size: 16px; }
+  .auth-submit-btn { padding: 15px; font-size: 14px; }
+  .google-btn { padding: 14px; font-size: 14px; }
+  .auth-tab { padding: 13px 12px; font-size: 13px; }
 }
