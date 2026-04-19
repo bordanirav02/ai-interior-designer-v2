@@ -43,10 +43,13 @@ function AppInner() {
   const [previousImage, setPreviousImage] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState("checking");
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [showBackendSetup, setShowBackendSetup] = useState(false);
-  const [apiUrl, setApiUrl] = useState(
-    () => localStorage.getItem("interiorai_api_url") || API_URL
-  );
+  // On Vercel (non-localhost) with no saved URL, don't default to localhost
+  const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  const savedUrl = localStorage.getItem("interiorai_api_url");
+  const initialUrl = savedUrl || (isLocalhost ? API_URL : "");
+
+  const [showBackendSetup, setShowBackendSetup] = useState(!initialUrl);
+  const [apiUrl, setApiUrl] = useState(initialUrl);
 
   const downloadRef = useRef(null);
   const generatedImageRef = useRef(null);
@@ -92,6 +95,12 @@ function AppInner() {
   // Connection status polling
   useEffect(() => {
     const checkHealth = async () => {
+      // No URL configured — show setup popup, don't fire any network request
+      if (!apiUrl) {
+        setConnectionStatus("offline");
+        setShowBackendSetup(true);
+        return;
+      }
       try {
         const res = await fetch(`${apiUrl}/health`, {
           signal: AbortSignal.timeout(5000),
