@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
-import { getApiUrl } from "../config";
+import { getApiUrl, apiHeaders } from "../config";
 import "./Upload.css";
 
 const FEATURES = [
@@ -32,7 +32,7 @@ export default function Upload({ onUpload }) {
     try {
       const formData = new FormData();
       formData.append("image", file);
-      await axios.post(`${getApiUrl()}/upload`, formData);
+      await axios.post(`${getApiUrl()}/upload`, formData, { headers: apiHeaders() });
       const dataURL = await new Promise((res) => {
         const r = new FileReader();
         r.onload = (e) => res(e.target.result);

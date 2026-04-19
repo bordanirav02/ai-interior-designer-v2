@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getApiUrl } from "../config";
+import { getApiUrl, apiHeaders } from "../config";
 import "./StyleComparison.css";
 
 const STYLES = [
@@ -32,7 +32,7 @@ export default function StyleComparison({ original, currentImage, currentStyle }
       setProgress(25);
       const res = await fetch(`${getApiUrl()}/generate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ style: secondStyle }),
       });
 

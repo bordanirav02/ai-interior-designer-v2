@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ColorPaletteSelector from "./ColorPaletteSelector";
 import FurnishRoom from "./FurnishRoom";
-import { getApiUrl } from "../config";
+import { getApiUrl, apiHeaders } from "../config";
 import "./StyleSelector.css";
 
 const STYLES = [
@@ -46,7 +46,7 @@ export default function StyleSelector({ uploadedImage, onGenerate }) {
 
       const res = await fetch(`${getApiUrl()}/preview-styles`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ palette: selectedPalette }),
       });
 

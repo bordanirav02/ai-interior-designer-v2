@@ -11,7 +11,7 @@ import ObjectEditor from "./components/ObjectEditor";
 import Auth from "./components/Auth";
 import BackendSetup from "./components/BackendSetup";
 import { ToastProvider, useToast } from "./components/Toast";
-import { API_URL } from "./config";
+import { API_URL, apiHeaders } from "./config";
 import "./App.css";
 
 const STEPS = ["upload", "style", "result", "edit"];
@@ -95,6 +95,7 @@ function AppInner() {
       try {
         const res = await fetch(`${apiUrl}/health`, {
           signal: AbortSignal.timeout(5000),
+          headers: apiHeaders(),
         });
         const data = await res.json();
         setConnectionStatus(data.colab_connected ? "full" : "partial");
@@ -188,7 +189,7 @@ function AppInner() {
 
       const res = await fetch(`${apiUrl}/generate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ style, palette, customPrompt }),
       });
 
@@ -214,7 +215,7 @@ function AppInner() {
 
         const detectRes = await fetch(`${apiUrl}/detect-objects`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: apiHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({}),
         });
         const detectData = await detectRes.json();
@@ -251,7 +252,7 @@ function AppInner() {
 
       const res = await fetch(`${apiUrl}/edit-object`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ object, prompt }),
       });
 

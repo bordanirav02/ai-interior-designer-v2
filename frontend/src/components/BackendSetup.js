@@ -50,6 +50,7 @@ export default function BackendSetup({ onConnect }) {
     try {
       const res = await fetch(`${clean}/health`, {
         signal: AbortSignal.timeout(8000),
+        headers: { "ngrok-skip-browser-warning": "true" },
       });
       const data = await res.json();
       if (data.status === "ok" || data.colab_connected !== undefined) {
