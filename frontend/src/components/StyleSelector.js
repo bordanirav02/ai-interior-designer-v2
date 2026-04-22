@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ColorPaletteSelector from "./ColorPaletteSelector";
 import FurnishRoom from "./FurnishRoom";
 import { getApiUrl, apiHeaders } from "../config";
+import { useToast } from "./Toast";
 import "./StyleSelector.css";
 
 const STYLES = [
@@ -17,6 +18,7 @@ const STYLES = [
 ];
 
 export default function StyleSelector({ uploadedImage, onGenerate }) {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState("transform");
   const [selected, setSelected] = useState(null);
   const [previews, setPreviews] = useState({});
@@ -67,8 +69,16 @@ export default function StyleSelector({ uploadedImage, onGenerate }) {
         }
       }, 8000);
 
-      const data = await res.json();
       clearInterval(interval);
+
+      // Guard against HTML error pages (500) returned as non-JSON
+      const contentType = res.headers.get("content-type") || "";
+      if (!res.ok || !contentType.includes("application/json")) {
+        toast("Preview generation failed on Colab — check that all model cells ran successfully. You can still select a style below.", "error", 6000);
+        return;
+      }
+
+      const data = await res.json();
 
       if (data.previews) {
         setPreviewStep(9);
@@ -76,9 +86,11 @@ export default function StyleSelector({ uploadedImage, onGenerate }) {
         await new Promise(r => setTimeout(r, 500));
         setPreviews(data.previews);
         setPreviewDone(true);
+      } else {
+        toast(data.error || "Preview failed — try selecting a style directly.", "error", 5000);
       }
     } catch (err) {
-      alert("Preview failed: " + err.message);
+      toast("Preview failed — Colab may be busy or models still loading. Select a style below to generate directly.", "error", 6000);
     } finally {
       setLoadingPreviews(false);
       setPreviewStep(0);
