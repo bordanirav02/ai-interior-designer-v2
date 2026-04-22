@@ -128,9 +128,13 @@ export default function BackendSetup({ onConnect }) {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
             >
+              <div className="bsetup-auto-badge">
+                <span className="bsetup-auto-icon">⚡</span>
+                If the owner has Colab running, this page <strong>auto-connects</strong> — just wait a moment.
+              </div>
               <div className="bsetup-step"><span className="bsetup-step-n">1</span>Run all cells in your Colab notebook</div>
-              <div className="bsetup-step"><span className="bsetup-step-n">2</span>Copy the <strong>ngrok URL</strong> from the last cell output</div>
-              <div className="bsetup-step"><span className="bsetup-step-n">3</span>Paste it below and click Connect</div>
+              <div className="bsetup-step"><span className="bsetup-step-n">2</span>The app connects automatically via Firebase</div>
+              <div className="bsetup-step"><span className="bsetup-step-n">3</span>Or paste the ngrok URL below to connect manually</div>
             </motion.div>
           )}
 

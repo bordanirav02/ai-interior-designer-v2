@@ -112,6 +112,30 @@
   overflow: hidden;
 }
 
+.bsetup-auto-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(201, 168, 76, 0.08);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 0.8rem;
+  color: #a89060;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.bsetup-auto-badge strong {
+  color: #c9a84c;
+}
+
+.bsetup-auto-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
 .bsetup-step {
   display: flex;
   align-items: flex-start;

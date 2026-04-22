@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth } from "./firebase";
+import { doc, onSnapshot } from "firebase/firestore";
+import { auth, db } from "./firebase";
 import Upload from "./components/Upload";
 import StyleSelector from "./components/StyleSelector";
 import ResultView from "./components/ResultView";
@@ -64,6 +65,24 @@ function AppInner() {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setAuthChecked(true);
+    });
+    return unsub;
+  }, []);
+
+  // Live Colab URL from Firestore — auto-connects when Colab is running
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "config", "colab_url"), (snap) => {
+      if (snap.exists()) {
+        const { url, active } = snap.data();
+        if (url && active) {
+          localStorage.setItem("interiorai_api_url", url);
+          setApiUrl(url);
+          setShowBackendSetup(false);
+        } else {
+          // Colab marked inactive — clear saved URL so popup shows next refresh
+          localStorage.removeItem("interiorai_api_url");
+        }
+      }
     });
     return unsub;
   }, []);
